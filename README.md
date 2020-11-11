@@ -776,8 +776,11 @@ This output writes data to the [Azure Application Insights service](https://azur
 | Field | Values/Types | Required | Description |
 | :---- | :-------------- | :------: | :---------- |
 | `type` | "ApplicationInsights" | Yes | Specifies the output type. For this output, it must be "ApplicationInsights". |
-| `instrumentationKey` | GUID | No | Specifies the instrumentation key for the targeted Application Insights resource. The key is in the form of a GUID. The key can be found on the Application Insights blade in Azure Portal. The value in this field overrides any value in the Application Insights configuration file (see the `configurationFilePath` parameter below). If `configurationFilePath` is not set, instrumentation key must be specified. |
-| `configurationFilePath` | string | No | Specifies the path to Application Insights configuration file. This parameter is optional-if no value is specified, default configuration for the Application Insights output will be used. For more information see [Application Insights documentation](https://docs.microsoft.com/en-us/azure/application-insights/app-insights-configuration-with-applicationinsights-config) |
+| `instrumentationKey` | string | No (*) | Specifies the instrumentation key for the targeted Application Insights resource. The key is typically a GUID; it can be found on the Azure Monitor Application Insights blade in Azure portal. <br/> The value in this field overrides any value in the Application Insights configuration file (see the `configurationFilePath` parameter) and in the connection string (`connectionString` parameter). |
+| `connectionString` | string | No (*) | Specifies the Application Insights connection string. <br/> The value in this field overrides any value in the Application Insights configuration file (see the `configurationFilePath` parameter). |
+| `configurationFilePath` | string | No (*) | Specifies the path to Application Insights configuration file. This parameter is optional-if no value is specified, default configuration for the Application Insights output will be used. For more information see [Application Insights documentation](https://docs.microsoft.com/en-us/azure/application-insights/app-insights-configuration-with-applicationinsights-config). |
+
+(*) At least one of the parameters: `instrumentationKey`, `connectionString`, or `configurationFilePath` must be provided for the Application Insights output configuration to be valid.
 
 In Service Fabric environment the Application Insights configuration file can should be part of the default service configuration package (the 'Config' package). To resolve the path of the configuration file within the service configuration package set the value of `configurationFilePath` to `servicefabricfile:/ApplicationInsights.config`. For more information on this syntax see [Service Fabric support](#service-fabric-support)
 
@@ -1271,17 +1274,16 @@ Standard and custom (payload) properties are treated equally; there is no need t
   - were created by `MyEventProvider` provider (ProviderName is a standard property available for all events), and
   - have a TenantId custom property, with value that is different from "Unknown" string.
 
-Operators supported by logical expressions are:
+The following table lists operators supported by logical expressions
 
-Comparison: `==`, `!=`, `<`, `>`, `<=`, `>=`
-
-Bitwise Equality: `&==` (true if bit mask is set, i.e., (lhsValue & rhsValue) == rhsValue, this is useful when filter on properties like Keywords)
-
-Regular Expression: `~=` (provide a regular expression pattern on the right)
-
-Logical: `&&`, `||`, `!` (the precedence is `!` > `&&` > `||`)
-
-Grouping: `(expression)` (grouping can be used to change the evaluation order of expressions with logical operators)
+| Class | Operators | Description |
+| :---- | :-------- | :---------------- |
+| Comparison | `==`, `!=`, `<`, `>`, `<=`, `>=` | Evaluates to true if the property (left side of the expression)  successfully compares to the value (right side of the expression). |
+| Property presence and absence | `hasproperty` `hasnoproperty` | `hasproperty transactionId` will only allow events that have a property named "`transactionId`". <br/>`hasnoproperty transactionId` does the opposite: it will only allow events that *do not* have a property named "`transactionId`". |
+| Bitwise Equality | `&==` | Evaluates to true if bit mask is set, i.e., `(lhsValue & rhsValue) == rhsValue`. This is useful to filter on properties like `Keywords`. |
+| Regular Expression | `~=` | Evaluates to true if the property value matches a regular expression pattern on the right. |
+| Logical | `&&`, `||`, `!` | Enables building complex logical expressions out of simpler ones. <br/> The precedence is `!` > `&&` > `||` (highest to lowest).
+| Grouping | `(expression)` | Grouping can be used to change the evaluation order of expressions with logical operators. |
 
 ## Store Secret Securely
 If you don't want to put sensitive information in the EventFlow configuration file, you can store the information at a secured place and pass it to the configuration at run time. Here is the sample code:
